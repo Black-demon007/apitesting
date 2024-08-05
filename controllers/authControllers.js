@@ -8,12 +8,12 @@ exports.signup = async (req, res, next) => {
   try {
     const userEmail = await User.findOne({ email: req.body.email });
     if (userEmail) {
-      return next(new createError("Email Already Exists", 400));
+      return next(createError('Email Already Exists', 400));
     }
 
     const userMobile = await User.findOne({ mobile: req.body.mobile });
     if (userMobile) {
-      return next(new createError("Mobile Already Exists", 400));
+      return next(createError('Mobile Already Exists', 400));
     }
 
     const hashedPassword = await bcrypt.hash(req.body.password, 12);
@@ -23,38 +23,34 @@ exports.signup = async (req, res, next) => {
     });
 
     const token = jwt.sign({ _id: newUser._id }, process.env.TOKEN_KEY, {
-      expiresIn: process.env.EXPIRY
+      expiresIn: process.env.EXPIRY,
     });
 
-    res.status(200).json({
+    res.status(201).json({
       status: 'success',
-      message: 'User Registered Sucessfully',
+      message: 'User Registered Successfully',
       token,
       user: {
         _id: newUser._id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-      }
+      },
     });
-  }
-
-  catch (error) {
-    next(error)
+  } catch (error) {
+    next(error);
   }
 };
 
-
-
-exports.login = async (req, res,next) => {
+exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return next(new createError("User Not Found", 404));
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) return next(createError('User Not Found', 404));
 
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return next(new createError("Invalid Email Or Password", 401));
+      return next(createError('Invalid Email Or Password', 401));
     }
 
     const token = jwt.sign({ _id: user._id }, process.env.TOKEN_KEY, {
@@ -64,7 +60,7 @@ exports.login = async (req, res,next) => {
     res.status(200).json({
       status: 'success',
       token,
-      message: 'Login Sucessfully',
+      message: 'Login Successfully',
       user: {
         _id: user._id,
         name: user.name,
@@ -72,10 +68,7 @@ exports.login = async (req, res,next) => {
         role: user.role,
       },
     });
+  } catch (error) {
+    next(error);
   }
-
-  catch (error) {
-    
-    next()
-  }
-}
+};
